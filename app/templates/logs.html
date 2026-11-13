@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3">Riwayat Eksekusi</h4>
+<form class="card card-body mb-3" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label small">Tanggal</label><input type="date" name="date_filter" value="{{ f.date }}" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label small">Nama API</label>
+      <select name="api_id" class="form-select"><option value="">Semua</option>
+        {% for a in apis %}<option value="{{ a.id }}" {{ 'selected' if f.api_id == a.id|string }}>{{ a.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label small">Status</label>
+      <select name="status" class="form-select"><option value="">Semua</option>
+        <option value="success" {{ 'selected' if f.status=='success' }}>Berhasil</option>
+        <option value="failed" {{ 'selected' if f.status=='failed' }}>Gagal</option></select></div>
+    <div class="col-md-2 d-flex gap-2"><button class="btn btn-primary flex-fill">Filter</button><a href="/logs" class="btn btn-light">Reset</a></div>
+  </div>
+</form>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Nama API</th><th>Waktu</th><th>Status Code</th><th>Hasil</th><th>Durasi</th><th></th></tr></thead>
+      <tbody>
+      {% for l in items %}
+        <tr><td>{{ l.api_name }} {% if l.trigger=='manual' %}<span class="badge text-bg-light border">manual</span>{% endif %}</td>
+          <td>{{ l.executed_at|localtime }}</td><td>{{ l.status_code or '-' }}</td>
+          <td>{% if l.success %}<span class="badge text-bg-success">Berhasil</span>{% else %}<span class="badge text-bg-danger">Gagal</span>{% endif %}</td>
+          <td>{{ l.duration_ms }} ms</td>
+          <td class="text-end"><button class="btn btn-sm btn-outline-primary btn-detail" data-id="{{ l.id }}">Detail</button></td></tr>
+      {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+    <span class="small text-muted">{{ total }} data · halaman {{ pg }}</span>
+    <div class="btn-group">
+      <a class="btn btn-sm btn-outline-secondary {{ 'disabled' if pg<=1 }}" href="/logs?{{ qs }}&page={{ pg-1 }}">&laquo; Sebelumnya</a>
+      <a class="btn btn-sm btn-outline-secondary {{ 'disabled' if not has_next }}" href="/logs?{{ qs }}&page={{ pg+1 }}">Berikutnya &raquo;</a>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Detail Eksekusi</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <dl class="row mb-3" id="d-meta"></dl>
+      <div id="d-error-wrap" class="mb-3 d-none"><label class="form-label fw-semibold text-danger">Pesan Error</label><pre class="log-pre" id="d-error"></pre></div>
+      <label class="form-label fw-semibold">Response</label><pre class="log-pre" id="d-response"></pre>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='js/logs.js') }}"></script>{% endblock %}

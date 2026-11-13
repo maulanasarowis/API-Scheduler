@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Daftar API</h4>
+  <button class="btn btn-primary" id="btn-add"><i class="bi bi-plus-lg"></i> Tambah API</button>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Nama API</th><th>Method</th><th>Status</th><th>Jadwal</th><th>Eksekusi Terakhir</th><th class="text-end">Aksi</th></tr></thead>
+      <tbody>
+      {% for r in rows %}{% set a = r.api %}
+        <tr>
+          <td><div class="fw-semibold">{{ a.name }}</div><div class="small text-muted text-truncate url-cell">{{ a.url }}</div></td>
+          <td><span class="badge text-bg-dark">{{ a.method }}</span></td>
+          <td>{% if a.is_active %}<span class="badge text-bg-success">Aktif</span>{% else %}<span class="badge text-bg-secondary">Nonaktif</span>{% endif %}</td>
+          <td>{% for s in a.schedules %}<span class="badge text-bg-light border">{{ s.time_of_day }}</span> {% else %}<span class="text-muted">-</span>{% endfor %}</td>
+          <td>{% if r.last %}<div class="small">{{ r.last.executed_at|localtime }}</div>
+            {% if r.last.success %}<span class="badge text-bg-success">Berhasil</span>{% else %}<span class="badge text-bg-danger">Gagal</span>{% endif %}
+            {% else %}<span class="text-muted">-</span>{% endif %}</td>
+          <td class="text-end text-nowrap">
+            <button class="btn btn-sm btn-outline-success btn-run" data-id="{{ a.id }}" title="Jalankan Sekarang"><i class="bi bi-play-fill"></i></button>
+            <button class="btn btn-sm btn-outline-secondary btn-toggle" data-id="{{ a.id }}" title="Aktif/Nonaktif"><i class="bi bi-power"></i></button>
+            <button class="btn btn-sm btn-outline-primary btn-edit" data-api='{{ r.payload|tojson }}' title="Edit"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger btn-delete" data-id="{{ a.id }}" data-name="{{ a.name }}" title="Hapus"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-5">Belum ada API. Klik "Tambah API" untuk memulai.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="apiModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="modal-title">Tambah API</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-8"><label class="form-label">Nama API</label><input id="f-name" class="form-control" placeholder="Contoh: Cek Stok"></div>
+          <div class="col-md-4"><label class="form-label">Method</label>
+            <select id="f-method" class="form-select"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select></div>
+          <div class="col-12"><label class="form-label">URL Endpoint</label><input id="f-url" class="form-control" placeholder="https://contoh.com/api/endpoint"></div>
+          <div class="col-md-6"><label class="form-label">Headers <span class="text-muted">(opsional, JSON)</span></label>
+            <textarea id="f-headers" class="form-control font-monospace" rows="4" placeholder='{"Authorization": "Bearer token"}'></textarea></div>
+          <div class="col-md-6"><label class="form-label">Body / Payload <span class="text-muted">(opsional, JSON)</span></label>
+            <textarea id="f-body" class="form-control font-monospace" rows="4" placeholder='{"key": "value"}'></textarea></div>
+          <div class="col-md-4"><label class="form-label">Timeout (detik)</label><input id="f-timeout" type="number" min="1" max="300" value="30" class="form-control"></div>
+          <div class="col-md-8 d-flex align-items-end"><div class="form-check form-switch fs-5">
+            <input class="form-check-input" type="checkbox" id="f-active" checked><label class="form-check-label" for="f-active">Aktif</label></div></div>
+          <div class="col-12"><label class="form-label">Jadwal Eksekusi</label>
+            <div class="input-group mb-2" style="max-width:260px"><input type="time" id="f-time" class="form-control"><button class="btn btn-outline-primary" id="btn-add-time" type="button"><i class="bi bi-plus-lg"></i> Tambah</button></div>
+            <div id="times-list" class="d-flex flex-wrap gap-2"></div></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal">Batal</button><button class="btn btn-primary" id="btn-save">Simpan</button></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='js/apis.js') }}"></script>{% endblock %}
