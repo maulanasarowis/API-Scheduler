@@ -2,6 +2,7 @@ import threading
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.events import EVENT_JOB_MISSED, EVENT_JOB_ERROR
 
 from .config import TIMEZONE, now_tz
 from .database import SessionLocal
@@ -10,7 +11,7 @@ from .models import ApiConfig
 
 scheduler = BackgroundScheduler(
     timezone=TIMEZONE,
-    job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 60},
+    job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 21600},
 )
 
 _lock = threading.Lock()
@@ -72,3 +73,14 @@ def start():
 def stop():
     if scheduler.running:
         scheduler.shutdown(wait=False)
+
+
+from apscheduler.events import EVENT_JOB_MISSED, EVENT_JOB_ERROR
+
+def _on_event(event):
+    if event.code == EVENT_JOB_MISSED:
+        print(f"[scheduler] DILEWATI: {event.job_id} (jadwal {event.scheduled_run_time})")
+    elif event.code == EVENT_JOB_ERROR:
+        print(f"[scheduler] ERROR: {event.job_id}: {event.exception}")
+
+scheduler.add_listener(_on_event, EVENT_JOB_MISSED | EVENT_JOB_ERROR)
